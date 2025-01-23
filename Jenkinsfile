@@ -1,28 +1,20 @@
 pipeline {
     agent any
-    tools {
-        maven 'maven3'
-        jdk 'java17'
-    }
     stages {
-        stage('Download Code From Git') {
+        stage('git-code-download') {
             steps {
+                echo "Download code from Git"
                 git branch: 'main', url: 'https://github.com/devopstechlab/maven-jenkins6.git'
             }
         }
-        stage('Build Java Project') {
+        stage('create-docker-image') {
             steps {
-                sh 'mvn clean package'
-            }
-        }
-        stage('Archive Artifcats') {
-            steps {
-                archiveArtifacts artifacts: '**/*.war', followSymlinks: false
-            }
-        }
-        stage('Trigger Deploy Job') {
-            steps {
-                build wait: false, job: 'deploy-dev-pipeline'
+                sh '''
+                docker build -t devopstechlab/javawebapp:${BUILD_NUMBER} .
+                docker tag devopstechlab/javawebapp:${BUILD_NUMBER} devopstechlab/javawebapp:latest
+                docker push devopstechlab/javawebapp:${BUILD_NUMBER}
+                docker push devopstechlab/javawebapp:latest
+                '''
             }
         }
     }
